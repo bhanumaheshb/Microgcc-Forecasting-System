@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Forecasting Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237c5cff'/%3E%3Cstop offset='100%25' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='24' rx='6' fill='url(%23g)'/%3E%3Cpath d='M3 17l6-6 4 4 8-8' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpolyline points='14 7 21 7 21 14' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-0: #0a0e1a;
+      --bg-1: #0f1729;
+      --bg-2: #1a2240;
+      --bg-3: #232c4d;
+      --line: #2a3458;
+      --text: #e8ecf5;
+      --muted: #8b95b3;
+      --dim:   #5b6486;
+
+      --accent:    #7c5cff;        /* primary purple */
+      --accent-2:  #22d3ee;        /* cyan */
+      --good:      #34d399;
+      --warn:      #fbbf24;
+      --bad:       #fb7185;
+
+      --grad-card: linear-gradient(140deg, #1a2240 0%, #1f274a 100%);
+      --grad-accent: linear-gradient(135deg, #7c5cff 0%, #22d3ee 100%);
+      --grad-glow: radial-gradient(circle at 30% 20%, rgba(124,92,255,0.15), transparent 50%),
+                   radial-gradient(circle at 80% 70%, rgba(34,211,238,0.10), transparent 50%);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-0);
+      background-image: var(--grad-glow);
+      background-attachment: fixed;
+      color: var(--text);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.01em;
+    }
+
+    /* HEADER */
+    header {
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(10,14,26,0.6);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--grad-accent);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 24px rgba(124,92,255,0.35);
+    }
+    .brand-mark svg { width: 20px; height: 20px; color: white; }
+    h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    header .links { display: flex; gap: 18px; font-size: 13px; }
+    header .links a { color: var(--muted); text-decoration: none; transition: color .15s; }
+    header .links a:hover { color: var(--accent-2); }
+
+    /* LAYOUT */
+    main {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      padding: 24px 32px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+
+    /* STATE PANEL */
+    .panel {
+      background: var(--grad-card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    .panel-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-head h2 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .badge {
+      background: rgba(124,92,255,0.15);
+      color: #c4b5ff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .search {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      margin: 0;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search:focus { border-color: var(--accent); }
+    .panel-body { padding: 12px 6px; max-height: 70vh; overflow-y: auto; }
+    .panel-body::-webkit-scrollbar { width: 8px; }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 4px; }
+    .search-row { padding: 10px 12px 12px; border-bottom: 1px solid var(--line); }
+
+    .state-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-radius: 8px;
+      margin: 1px 6px;
+      transition: background .12s;
+    }
+    .state-row:hover { background: rgba(124,92,255,0.08); }
+    .state-row.active {
+      background: linear-gradient(90deg, rgba(124,92,255,0.20), rgba(34,211,238,0.10));
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+    .state-name { font-weight: 500; font-size: 13px; }
+    .pill {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pill.prophet  { background: rgba(34,211,238,0.18); color: #67e8f9; }
+    .pill.sarima   { background: rgba(167,139,250,0.18); color: #c4b5fd; }
+    .pill.xgboost  { background: rgba(251,146,60,0.18); color: #fdba74; }
+    .pill.lstm     { background: rgba(52,211,153,0.18); color: #6ee7b7; }
+    .mape {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+      min-width: 46px;
+      text-align: right;
+    }
+
+    /* RIGHT COLUMN */
+    .right { display: flex; flex-direction: column; gap: 24px; }
+
+    /* SUMMARY CARDS */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card {
+      position: relative;
+      background: var(--grad-card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 18px;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(124,92,255,0.08));
+      pointer-events: none;
+    }
+    .stat-card .k {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .stat-card .v {
+      margin-top: 8px;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: var(--grad-accent);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-card .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* CONTROLS */
+    .controls {
+      background: var(--grad-card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 1fr 320px auto;
+      gap: 16px;
+      align-items: end;
+    }
+    @media (max-width: 900px) { .controls { grid-template-columns: 1fr; } }
+    .ctl label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .selected-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .horizon-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: var(--bg-1);
+      border-radius: 999px;
+      outline: none;
+      margin: 0;
+    }
+    .horizon-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--grad-accent);
+      cursor: pointer;
+      border: 2px solid var(--bg-0);
+      box-shadow: 0 2px 8px rgba(124,92,255,0.4);
+    }
+    .horizon-slider::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #7c5cff; cursor: pointer; border: 2px solid var(--bg-0);
+    }
+    .horizon-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--accent-2);
+      margin-left: 4px;
+    }
+    .btn {
+      padding: 11px 22px;
+      background: var(--grad-accent);
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      box-shadow: 0 4px 16px rgba(124,92,255,0.35);
+      transition: transform .1s, box-shadow .15s;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,92,255,0.5); }
+    .btn:active { transform: translateY(0); }
+
+    /* CHART */
+    #chart {
+      background: var(--grad-card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 8px;
+      height: 460px;
+    }
+
+    /* FORECAST TABLE */
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .week-card {
+      background: var(--grad-card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: border-color .15s, transform .15s;
+    }
+    .week-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .week-card .wk { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .week-card .dt { font-size: 13px; color: var(--text); font-weight: 600; margin-top: 3px; }
+    .week-card .yhat {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 8px;
+      background: var(--grad-accent);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .week-card .delta { font-size: 11px; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+    .delta.up { color: var(--good); }
+    .delta.down { color: var(--bad); }
+
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+
+    .err {
+      color: var(--bad);
+      font-size: 13px;
+      padding: 10px 14px;
+      background: rgba(251,113,133,0.08);
+      border: 1px solid rgba(251,113,133,0.3);
+      border-radius: 10px;
+    }
+    .err:empty { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"></polyline><polyline points="14 7 21 7 21 14"></polyline></svg>
+      </div>
+      <div>
+        <h1>Sales Forecasting Dashboard</h1>
+        <div class="sub">43 US states · weekly Beverages sales · best of SARIMA · Prophet · XGBoost · LSTM</div>
+      </div>
+    </div>
+    <div class="links">
+      <a href="/docs" target="_blank">API Docs ↗</a>
+      <a href="/metrics" target="_blank">Metrics ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT: state list -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>States</h2>
+        <span class="badge" id="state-count">0</span>
+      </div>
+      <div class="search-row">
+        <input type="text" class="search" id="search" placeholder="Search…" />
+      </div>
+      <div class="panel-body" id="state-list"></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+      <!-- summary -->
+      <div class="summary" id="summary"></div>
+
+      <!-- controls -->
+      <div class="controls">
+        <div class="ctl">
+          <label>Selected state</label>
+          <div class="selected-pill" id="selected-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4.5 8-12a8 8 0 1 0-16 0c0 7.5 8 12 8 12z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span id="selected-name">—</span>
+          </div>
+        </div>
+        <div class="ctl">
+          <label>Horizon: <span class="horizon-display" id="horizon-val">8</span> weeks</label>
+          <input type="range" class="horizon-slider" id="horizon" min="1" max="26" value="8" />
+        </div>
+        <button class="btn" id="run-btn">Forecast</button>
+      </div>
+
+      <div id="error" class="err"></div>
+
+      <!-- chart -->
+      <div id="chart"></div>
+
+      <!-- weekly cards -->
+      <div>
+        <h3 class="section-title">Weekly forecast</h3>
+        <div class="forecast-grid" id="fc-grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  const fmtMoney = v => {
+    if (v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+    if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'K';
+    return '$' + v.toFixed(0);
+  };
+  const fmtFull = v => new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 0 }).format(v);
+
+  let statesIndex = [];
+  let selected = 'California';
+
+  async function fetchJSON(url, opts = {}) {
+    const r = await fetch(url, opts);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  }
+
+  async function loadStates() {
+    try {
+      statesIndex = await fetchJSON('/states');
+    } catch (e) {
+      document.getElementById('error').textContent =
+        'Could not load /states — is the API running and were models trained? ' + e.message;
+      statesIndex = [];
+    }
+    document.getElementById('state-count').textContent = statesIndex.length;
+    renderStates('');
+    renderSummary();
+  }
+
+  function renderStates(filter) {
+    const list = document.getElementById('state-list');
+    list.innerHTML = '';
+    const f = filter.trim().toLowerCase();
+    for (const s of statesIndex) {
+      if (f && !s.state.toLowerCase().includes(f)) continue;
+      const row = document.createElement('div');
+      row.className = 'state-row' + (s.state === selected ? ' active' : '');
+      row.dataset.state = s.state;
+      row.innerHTML = `
+        <span class="state-name">${s.state}</span>
+        <span class="pill ${s.best_model}">${s.best_model}</span>
+        <span class="mape">${s.validation_mape == null ? '—' : s.validation_mape.toFixed(1) + '%'}</span>`;
+      row.addEventListener('click', () => {
+        selected = s.state;
+        renderStates(filter);
+        document.getElementById('selected-name').textContent = selected;
+        runForecast();
+      });
+      list.appendChild(row);
+    }
+  }
+
+  function renderSummary() {
+    const counts = {};
+    let mapeSum = 0, n = 0, best = null;
+    for (const s of statesIndex) {
+      counts[s.best_model] = (counts[s.best_model] || 0) + 1;
+      if (s.validation_mape != null) {
+        mapeSum += s.validation_mape;
+        n++;
+        if (best == null || s.validation_mape < best.validation_mape) best = s;
+      }
+    }
+    const meanMape = n ? (mapeSum / n).toFixed(2) + '%' : '—';
+    const winner = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+    const summary = document.getElementById('summary');
+    summary.innerHTML = `
+      <div class="stat-card"><div class="k">States</div><div class="v">${statesIndex.length}</div><div class="meta">All US continental + AK/HI</div></div>
+      <div class="stat-card"><div class="k">Mean MAPE</div><div class="v">${meanMape}</div><div class="meta">on last 8-week holdout</div></div>
+      <div class="stat-card"><div class="k">Top model</div><div class="v">${winner ? winner[0] : '—'}</div><div class="meta">${winner ? winner[1] + ' / ' + statesIndex.length + ' states' : ''}</div></div>
+      <div class="stat-card"><div class="k">Best state</div><div class="v">${best ? best.state : '—'}</div><div class="meta">${best ? best.validation_mape.toFixed(2) + '% MAPE · ' + best.best_model : ''}</div></div>`;
+  }
+
+  async function runForecast() {
+    const horizon = parseInt(document.getElementById('horizon').value, 10);
+    document.getElementById('error').textContent = '';
+    try {
+      const [hist, fc] = await Promise.all([
+        fetchJSON(`/history/${encodeURIComponent(selected)}?weeks=52`),
+        fetchJSON(`/forecast/${encodeURIComponent(selected)}?horizon=${horizon}`),
+      ]);
+      drawChart(hist, fc);
+      drawCards(fc, hist);
+    } catch (e) {
+      document.getElementById('error').textContent = e.message;
+    }
+  }
+
+  function drawChart(hist, fc) {
+    const histX = hist.history.map(p => p.week_start);
+    const histY = hist.history.map(p => p.y);
+    const fcX = fc.forecast.map(p => p.week_start);
+    const fcY = fc.forecast.map(p => p.yhat);
+
+    // bridge segment so lines connect
+    const bridgeX = [histX[histX.length - 1], fcX[0]];
+    const bridgeY = [histY[histY.length - 1], fcY[0]];
+
+    const traceHist = {
+      x: histX, y: histY, mode: 'lines', name: 'History',
+      line: { color: '#22d3ee', width: 2.5, shape: 'spline' },
+      fill: 'tozeroy', fillcolor: 'rgba(34,211,238,0.08)',
+      hovertemplate: '<b>%{x}</b><br>%{y:$,.0f}<extra>actual</extra>',
+    };
+    const traceBridge = {
+      x: bridgeX, y: bridgeY, mode: 'lines',
+      line: { color: 'rgba(255,255,255,0.25)', width: 1.5, dash: 'dot' },
+      hoverinfo: 'skip', showlegend: false,
+    };
+    const traceFc = {
+      x: fcX, y: fcY, mode: 'lines+markers', name: `Forecast (${fc.model})`,
+      line: { color: '#7c5cff', width: 3, shape: 'spline' },
+      marker: { color: '#a78bfa', size: 8, line: { color: '#fff', width: 1 } },
+      fill: 'tozeroy', fillcolor: 'rgba(124,92,255,0.10)',
+      hovertemplate: '<b>%{x}</b><br>%{y:$,.0f}<extra>forecast</extra>',
+    };
+
+    const lastHist = histX[histX.length - 1];
+    Plotly.newPlot('chart', [traceHist, traceBridge, traceFc], {
+      margin: { t: 40, l: 70, r: 30, b: 50 },
+      title: {
+        text: `<b>${fc.state}</b> · history (52w) and ${fc.horizon_weeks}-week forecast`,
+        font: { color: '#e8ecf5', size: 14, family: 'Inter' },
+        x: 0.02, xanchor: 'left',
+      },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      xaxis: { gridcolor: '#2a3458', color: '#8b95b3', showgrid: true },
+      yaxis: { gridcolor: '#2a3458', color: '#8b95b3', tickformat: '$.2s', showgrid: true, zeroline: false },
+      font: { color: '#e8ecf5', family: 'Inter' },
+      legend: {
+        orientation: 'h', x: 1, xanchor: 'right', y: 1.12,
+        font: { color: '#8b95b3', size: 12 },
+        bgcolor: 'rgba(0,0,0,0)',
+      },
+      shapes: [{
+        type: 'line',
+        x0: lastHist, x1: lastHist, y0: 0, y1: 1, yref: 'paper',
+        line: { color: 'rgba(255,255,255,0.18)', width: 1, dash: 'dash' },
+      }],
+      annotations: [{
+        x: lastHist, y: 1.04, yref: 'paper',
+        text: 'now', showarrow: false,
+        font: { color: '#8b95b3', size: 10 },
+      }],
+    }, { displaylogo: false, responsive: true, displayModeBar: false });
+  }
+
+  function drawCards(fc, hist) {
+    const grid = document.getElementById('fc-grid');
+    grid.innerHTML = '';
+    const lastActual = hist.history.length ? hist.history[hist.history.length - 1].y : null;
+    let prev = lastActual;
+    fc.forecast.forEach((p, i) => {
+      const card = document.createElement('div');
+      card.className = 'week-card';
+      let delta = '';
+      if (prev != null) {
+        const pct = (p.yhat - prev) / Math.max(prev, 1) * 100;
+        const cls = pct >= 0 ? 'up' : 'down';
+        const arr = pct >= 0 ? '▲' : '▼';
+        delta = `<div class="delta ${cls}">${arr} ${Math.abs(pct).toFixed(1)}% vs prev</div>`;
+      }
+      card.innerHTML = `
+        <div class="wk">Week ${i + 1}</div>
+        <div class="dt">${p.week_start}</div>
+        <div class="yhat" title="${fmtFull(p.yhat)}">${fmtMoney(p.yhat)}</div>
+        ${delta}`;
+      grid.appendChild(card);
+      prev = p.yhat;
+    });
+  }
+
+  document.getElementById('horizon').addEventListener('input', e => {
+    document.getElementById('horizon-val').textContent = e.target.value;
+  });
+  document.getElementById('run-btn').addEventListener('click', runForecast);
+  document.getElementById('search').addEventListener('input', e => renderStates(e.target.value));
+
+  (async () => {
+    document.getElementById('selected-name').textContent = selected;
+    await loadStates();
+    runForecast();
+  })();
+  </script>
+</body>
+</html>
