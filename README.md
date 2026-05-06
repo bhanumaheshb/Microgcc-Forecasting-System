@@ -127,3 +127,6 @@ curl -s 'http://localhost:8000/forecast/California?horizon=8'
 2. **Feature Engineering**: Calculates lags (1, 2, 4, 8, 12, 52 weeks), rolling means and standard deviations (4 and 12-week windows) on shifted data to prevent data leakage, alongside calendar and US holiday boolean flags.
 3. **Training & Validation**: Trains SARIMA, Prophet, XGBoost, and an LSTM network per state. A holdout validation set of the last 8 weeks evaluates the performance (MAPE). The winning model is then refitted on the full dataset so production forecasts utilize the most recent trends.
 4. **Serving**: The serialized `joblib` models are loaded into memory by FastAPI, which dynamically handles incoming prediction requests, recursively applies feature engineering for step-ahead forecasting (XGBoost), and serves results.
+
+AUTHOR 
+BHANU MAHESH B
