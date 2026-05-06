@@ -1,4 +1,4 @@
-"""Offline smoke tests — run after `python -m src.train`."""
+"""Offline smoke tests — run after `python -m backend.train`."""
 from pathlib import Path
 import joblib
 import pandas as pd
@@ -7,7 +7,7 @@ ART = Path(__file__).resolve().parents[1] / "artifacts" / "models.joblib"
 
 
 def test_artifacts_exist():
-    assert ART.exists(), "Run training first: python -m src.train"
+    assert ART.exists(), "Run training first: python -m backend.train"
 
 
 def test_each_state_has_model():

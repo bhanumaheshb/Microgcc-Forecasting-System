@@ -12,9 +12,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src import data_prep
-from src.features import make_features, time_split, FEATURE_COLS
-from src.models import (
+from backend import data_prep
+from backend.features import make_features, time_split, FEATURE_COLS
+from backend.models import (
     SarimaModel, ProphetModel, XgbModel, LstmModel,
     mape, StateResult,
 )

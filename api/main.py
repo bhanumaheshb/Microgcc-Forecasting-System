@@ -87,7 +87,7 @@ def _load():
     global _state_results, _summary_df, _history_df
     if not ART.exists():
         raise RuntimeError(
-            f"Artifacts not found at {ART}. Run `python -m src.train` first."
+            f"Artifacts not found at {ART}. Run `python -m backend.train` first."
         )
     _state_results = joblib.load(ART)
     if SUMMARY.exists():

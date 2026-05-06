@@ -21,7 +21,7 @@ The system follows a modular, clean architecture separating data processing, mod
 ```text
 forecasting_system/
 ├── data/                  # Raw datasets and processed outputs
-├── src/                   # Core Business Logic & ML Pipeline
+├── backend/               # Core Business Logic & ML Pipeline
 │   ├── data_prep.py       # Ingestion, weekly resampling, and imputation
 │   ├── features.py        # Leakage-free feature engineering (lags, rolling stats)
 │   ├── models.py          # Wrappers for SARIMA, Prophet, XGBoost, and LSTM
@@ -64,15 +64,15 @@ npm install
 ### 1. Data Preparation
 Prepare the raw data by cleaning, resampling to a weekly grid, and imputing missing values:
 ```bash
-python -m src.data_prep
+python -m backend.data_prep
 ```
 
 ### 2. Model Training
 Train the models across all states. This script holds out the last 8 weeks for validation, selects the best model, and serializes the artifacts:
 ```bash
-python -m src.train
+python -m backend.train
 ```
-*(Tip: To test the pipeline quickly, run `python -m src.train Alabama,California` to train on a subset of states.)*
+*(Tip: To test the pipeline quickly, run `python -m backend.train Alabama,California` to train on a subset of states.)*
 
 ### 3. Start the Backend API Service
 Serve the predictions using FastAPI from the root directory:
